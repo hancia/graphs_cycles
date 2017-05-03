@@ -3,7 +3,7 @@
 #include<cstdlib>
 #include <fstream>
 using namespace std;
-int n=30;
+int n=20;
 double d=0.2;
 
 struct lista
@@ -18,36 +18,34 @@ struct wierzcholek
     bool visited;
 };
 
+
+bool eulerowski(int **M)
+{
+    int flaga=0;
+    for(int i=0; i<n; i++)
+    {
+        flaga=0;
+        for(int j=0; j<n; j++) if(M[i][j]==1)flaga++;
+        if(flaga%2!=0&&flaga!=2) return false;
+    }
+    return true;
+}
+
 //generuje macierz
-void generuj_macierz(int **M, double gestosc,int krawedzie, int &spojny)
+void generuj_macierz(int **M, double gestosc,int &krawedzie, int &spojny)
 {
     gestosc=gestosc*n*(n-1)/2;
     int a,b, flaga=0;
     while(krawedzie>=gestosc)
     {
-        int current=krawedzie;
-        while(current-2!=krawedzie)
-        {
-            flaga=0;
-            a=rand()%n;
-            b=rand()%n;
-            if(d>2/n)
-            {
-                for(int j=0; j<n; j++) if(M[a][j]==1&&M[b][j]==1) flaga++;
-            }
-            else
-            {
-                flaga=2;
-                spojny=0;
-            }
-            if(flaga>1)
-            {
-                M[a][b]=0;
-                M[b][a]=0;
-                krawedzie--;
-            }
-        }
+        a=rand()%n;
+        b=rand()%n;
+        M[a][b]=0;
+        M[b][a]=0;
+        krawedzie--;
     }
+    if(!eulerowski(M)) spojny=0;
+    else spojny=1;
 }
 
 //generuje liste nastepnikow na podstawie macierzy
@@ -99,7 +97,7 @@ void generuj_nast(wierzcholek T[], int **M)
 int main()
 {
     srand(time(NULL));
-    int krawedzie=0,spojny=1;
+    int krawedzie=0,spojny=0;
     wierzcholek *T = new wierzcholek[n];
     for(int i=0; i<n; i++)
     {
@@ -119,16 +117,36 @@ int main()
             else
             M[i][j]=0;
     }
-    generuj_macierz(M,d,krawedzie,spojny);
-    if(spojny==0) cout<<"dla takiej gestosci i losci wierzcholkow nie istnieje graf eulerowski!"<<endl;
-    for(int i=0; i<n; i++)
+    if(d>(2/n))
     {
-        for(int j=0; j<n; j++)
-            cout<<M[i][j]<<" ";
-        cout<<endl;
+        while(spojny!=1)
+            {
+                for(int i=0;i<n;i++)
+                {
+                    for(int j=0;j<n;j++)
+                        {
+                            if(M[i][j]!=1)
+                            {
+                                M[i][j]=1;
+                                krawedzie++;
+                            }
+                        }
+                }
+                generuj_macierz(M,d,krawedzie,spojny);
+            }
     }
-    generuj_nast(T,M);
-    wyswietl_nast(T);
+    if(spojny==0) cout<<"dla takiej gestosci i losci wierzcholkow nie istnieje graf eulerowski!"<<endl;
+    else
+    {
+        for(int i=0; i<n; i++)
+        {
+            for(int j=0; j<n; j++)
+                cout<<M[i][j]<<" ";
+            cout<<endl;
+        }
+        generuj_nast(T,M);
+        wyswietl_nast(T);
+    }
     delete []T;
     for(int i=0; i<n; i++)
         delete []M[i];
