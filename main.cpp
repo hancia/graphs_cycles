@@ -4,29 +4,29 @@
 #include <fstream>
 using namespace std;
 int n=20;
-double d=0.2;
+double d=0.6;
 
 struct lista
 {
     int nazwa;
     lista* next;
+    lista *prev;
     lista *mirror;
 };
 struct wierzcholek
 {
+    int nazwa;
     lista *sasiad;
-    bool visited;
 };
-
 
 bool eulerowski(int **M)
 {
-    int flaga=0;
+    int flaga=0,b;
     for(int i=0; i<n; i++)
     {
         flaga=0;
         for(int j=0; j<n; j++) if(M[i][j]==1)flaga++;
-        if(flaga%2!=0&&flaga!=2) return false;
+        if(flaga%2!=0||flaga<2) return false;
     }
     return true;
 }
@@ -35,8 +35,8 @@ bool eulerowski(int **M)
 void generuj_macierz(int **M, double gestosc,int &krawedzie, int &spojny)
 {
     gestosc=gestosc*n*(n-1)/2;
-    int a,b, flaga=0;
-    while(krawedzie>=gestosc)
+    int a,b,c;
+    while(krawedzie>=gestosc||krawedzie%2!=0)
     {
         a=rand()%n;
         b=rand()%n;
@@ -60,8 +60,16 @@ void generuj_nast(wierzcholek T[], int **M)
                 lista *nowy= new lista;
                 nowy->nazwa=m;
                 nowy->mirror=NULL;
-                if(T[i].sasiad==NULL) nowy->next=NULL;
-                else nowy->next=T[i].sasiad;
+                nowy->prev=NULL;
+                if(T[i].sasiad==NULL)
+                {
+                    nowy->next=NULL;
+                }
+                else
+                {
+                    nowy->next=T[i].sasiad;
+                    T[i].sasiad->prev=nowy;
+                }
                 T[i].sasiad=nowy;
             }
         }
@@ -93,16 +101,73 @@ void generuj_nast(wierzcholek T[], int **M)
          }
      }
 }
+void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
+{
+    lista *pom2=T[temp->nazwa].sasiad;
+    if(pom2!=NULL)
+    {
+        while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
+        if(pom2->prev!=NULL&&pom2->next!=NULL)
+        {
+            pom2->prev->next=pom2->next;
+            pom2->next->prev=pom2->prev;
+        }
+        else
+        {
+            if(pom2->next==NULL&&pom2->prev!=NULL)
+                {
+                    pom2->prev->next=NULL;
+                }
+            else
+            {
+                if(pom2->next!=NULL)
+                {
+                    T[temp->nazwa].sasiad=T[temp->nazwa].sasiad->next;
+                    T[temp->nazwa].sasiad->prev=NULL;
+                }
+                else
+                {
+                    T[temp->nazwa].sasiad=NULL;
+                }
+            }
+        }
+    }
+}
+void dfs(wierzcholek T[], wierzcholek &stos, lista *temp)
+{
+    while(temp!=NULL)
+    {
+        usun(T,temp,stos);
+        lista *pom=temp;
+        temp=temp->next;
+        if(temp==NULL) stos.sasiad=NULL;
+        else
+        {
+            temp->prev=NULL;
+            stos.sasiad=temp;
+        }
+        dfs(T,T[pom->nazwa],T[pom->nazwa].sasiad);
+    }
+   cout<<stos.nazwa+1<<"->";
+}
+void szukaj_euler(wierzcholek T[], lista *stos)
+{
+    wierzcholek *pom = new wierzcholek[n];
+    pom=T;
+    dfs(pom,pom[0],pom[0].sasiad);
+    delete []pom;
+}
 
 int main()
 {
     srand(time(NULL));
-    int krawedzie=0,spojny=0;
+    int krawedzie=0,spojny=0,odwiedzone=0, krok=0;
+    lista *stos=NULL;
     wierzcholek *T = new wierzcholek[n];
     for(int i=0; i<n; i++)
     {
+        T[i].nazwa=i;
         T[i].sasiad=NULL;
-        T[i].visited=0;
     }
     int **M=new int *[n];
     for(int i=0; i<n; i++)
@@ -117,7 +182,7 @@ int main()
             else
             M[i][j]=0;
     }
-    if(d>(2/n))
+    if(d>(double)2/n)
     {
         while(spojny!=1)
             {
@@ -125,7 +190,7 @@ int main()
                 {
                     for(int j=0;j<n;j++)
                         {
-                            if(M[i][j]!=1)
+                            if(M[i][j]!=1&&i!=j)
                             {
                                 M[i][j]=1;
                                 krawedzie++;
@@ -146,6 +211,7 @@ int main()
         }
         generuj_nast(T,M);
         wyswietl_nast(T);
+        szukaj_euler(T,stos);
     }
     delete []T;
     for(int i=0; i<n; i++)
