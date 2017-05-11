@@ -2,9 +2,11 @@
 #include<ctime>
 #include<cstdlib>
 #include <fstream>
+#include <string.h>
+#include <vector>
 using namespace std;
-int n=20;
-double d=0.6;
+int n=5;
+double d=0.8;
 
 struct lista
 {
@@ -17,6 +19,7 @@ struct wierzcholek
 {
     int nazwa;
     lista *sasiad;
+    bool visited;
 };
 
 bool eulerowski(int **M)
@@ -148,16 +151,57 @@ void dfs(wierzcholek T[], wierzcholek &stos, lista *temp)
         }
         dfs(T,T[pom->nazwa],T[pom->nazwa].sasiad);
     }
-   cout<<stos.nazwa+1<<"->";
+   //cout<<stos.nazwa+1<<"->";
 }
 void szukaj_euler(wierzcholek T[], lista *stos)
 {
     wierzcholek *pom = new wierzcholek[n];
-    pom=T;
+    memcpy(pom,T,sizeof(wierzcholek));
     dfs(pom,pom[0],pom[0].sasiad);
     delete []pom;
 }
+void print_vector (vector <int> tab)
+{
+    cout<<"\nCYKL:\n";
+    for(int i=0;i<tab.size();i++)
+        cout<<tab[i]<<" ";
+    cout<<endl;
+}
 
+void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzone,vector<int>&cykle)
+{
+    V.visited=1;
+    odwiedzone++;
+    cykle.push_back(V.nazwa+1);
+    cout<<"ilosc odwiedzonych "<<odwiedzone;
+    if(odwiedzone==n)
+    {
+        int flaga=0;
+        while(stos!=NULL)
+        {
+            if(stos->nazwa==0)
+            {
+                flaga=1;
+                break;
+            }
+            else stos=stos->next;
+        }
+        if(flaga==1)print_vector(cykle);
+        else cout<<"nie ma cyklu";
+    }
+    while(stos!=NULL)
+    {
+        if(!T[stos->nazwa].visited)
+        {
+            cout<<"sprawdzam "<<stos->nazwa+1<<endl;
+            szukaj_hamilton(T,T[stos->nazwa],T[stos->nazwa].sasiad,odwiedzone,cykle);
+        }
+        stos=stos->next;
+    }
+    V.visited=0;
+    cykle.pop_back();
+    odwiedzone--;
+}
 int main()
 {
     srand(time(NULL));
@@ -168,6 +212,7 @@ int main()
     {
         T[i].nazwa=i;
         T[i].sasiad=NULL;
+        T[i].visited=0;
     }
     int **M=new int *[n];
     for(int i=0; i<n; i++)
@@ -212,6 +257,9 @@ int main()
         generuj_nast(T,M);
         wyswietl_nast(T);
         szukaj_euler(T,stos);
+
+        vector<int> cykle;
+        szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle);
     }
     delete []T;
     for(int i=0; i<n; i++)
