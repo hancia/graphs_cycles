@@ -1,6 +1,7 @@
 bin 
 graph_cycles
 obj
+cycles_graphs*
 
 # Compiled Object files
 *.slo
