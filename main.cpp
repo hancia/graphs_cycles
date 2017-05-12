@@ -84,8 +84,8 @@ void generuj_nast(wierzcholek T[], int **M)
         while(current!=NULL)
         {
             szukaj=T[current->nazwa].sasiad;
-            while(szukaj!=NULL&&szukaj->nazwa!=current->nazwa) szukaj=szukaj->next;
-            if(szukaj!=NULL&&szukaj->nazwa==current->nazwa) current->mirror=szukaj;
+            while(szukaj!=NULL&&szukaj->nazwa!=i) szukaj=szukaj->next;
+            if(szukaj!=NULL&&szukaj->nazwa==i) current->mirror=szukaj;
             current=current->next;
         }
     }
@@ -106,10 +106,11 @@ void generuj_nast(wierzcholek T[], int **M)
 }
 void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
 {
-    lista *pom2=T[temp->nazwa].sasiad;
+    //lista *pom2=T[temp->nazwa].sasiad;
+    lista *pom2=stos.sasiad->mirror;
     if(pom2!=NULL)
     {
-        while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
+        //while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
         if(pom2->prev!=NULL&&pom2->next!=NULL)
         {
             pom2->prev->next=pom2->next;
@@ -167,40 +168,44 @@ void print_vector (vector <int> tab)
         cout<<tab[i]<<" ";
     cout<<endl;
 }
-
-void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzone,vector<int>&cykle)
+int flaga_znalezienia = 0;
+void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzone,vector<int>&cykle,int znajdz_jeden=0)
 {
-    V.visited=1;
-    odwiedzone++;
-    cykle.push_back(V.nazwa+1);
-    cout<<"ilosc odwiedzonych "<<odwiedzone;
-    if(odwiedzone==n)
+    if(!(flaga_znalezienia && znajdz_jeden))
     {
-        int flaga=0;
+         V.visited=1;
+        odwiedzone++;
+        cykle.push_back(V.nazwa+1);
+        if(odwiedzone==n)
+        {
+            int flaga=0;
+            while(stos!=NULL)
+            {
+                if(stos->nazwa==0)
+                {
+                    flaga=1;
+                    break;
+                }
+                else stos=stos->next;
+            }
+            if(flaga==1)
+            {
+                //print_vector(cykle);
+                flaga_znalezienia=1;
+            }
+        }
         while(stos!=NULL)
         {
-            if(stos->nazwa==0)
+            if(!T[stos->nazwa].visited)
             {
-                flaga=1;
-                break;
+                szukaj_hamilton(T,T[stos->nazwa],T[stos->nazwa].sasiad,odwiedzone,cykle,znajdz_jeden);
             }
-            else stos=stos->next;
+            stos=stos->next;
         }
-        if(flaga==1)print_vector(cykle);
-        else cout<<"nie ma cyklu";
+        V.visited=0;
+        cykle.pop_back();
+        odwiedzone--;
     }
-    while(stos!=NULL)
-    {
-        if(!T[stos->nazwa].visited)
-        {
-            cout<<"sprawdzam "<<stos->nazwa+1<<endl;
-            szukaj_hamilton(T,T[stos->nazwa],T[stos->nazwa].sasiad,odwiedzone,cykle);
-        }
-        stos=stos->next;
-    }
-    V.visited=0;
-    cykle.pop_back();
-    odwiedzone--;
 }
 int main()
 {
@@ -259,6 +264,9 @@ int main()
         szukaj_euler(T,stos);
 
         vector<int> cykle;
+        szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle,1);
+
+        odwiedzone=0;
         szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle);
     }
     delete []T;
