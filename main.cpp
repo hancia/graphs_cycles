@@ -4,9 +4,10 @@
 #include <fstream>
 #include <string.h>
 #include <vector>
+#include <windows.h>
 using namespace std;
-int n=5;
-double d=0.8;
+int n=20;
+double d=0.6;
 
 struct lista
 {
@@ -106,11 +107,11 @@ void generuj_nast(wierzcholek T[], int **M)
 }
 void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
 {
-    //lista *pom2=T[temp->nazwa].sasiad;
-    lista *pom2=stos.sasiad->mirror;
+    lista *pom2=T[temp->nazwa].sasiad;
+    //lista *pom2=stos.sasiad->mirror;
     if(pom2!=NULL)
     {
-        //while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
+        while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
         if(pom2->prev!=NULL&&pom2->next!=NULL)
         {
             pom2->prev->next=pom2->next;
@@ -135,6 +136,7 @@ void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
                 }
             }
         }
+        //stos.sasiad->mirror=NULL;
     }
 }
 void dfs(wierzcholek T[], wierzcholek &stos, lista *temp)
@@ -157,7 +159,7 @@ void dfs(wierzcholek T[], wierzcholek &stos, lista *temp)
 void szukaj_euler(wierzcholek T[], lista *stos)
 {
     wierzcholek *pom = new wierzcholek[n];
-    memcpy(pom,T,sizeof(wierzcholek));
+    memcpy(pom,T,n * sizeof(wierzcholek));
     dfs(pom,pom[0],pom[0].sasiad);
     delete []pom;
 }
@@ -173,7 +175,7 @@ void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzon
 {
     if(!(flaga_znalezienia && znajdz_jeden))
     {
-         V.visited=1;
+        V.visited=1;
         odwiedzone++;
         cykle.push_back(V.nazwa+1);
         if(odwiedzone==n)
@@ -202,9 +204,9 @@ void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzon
             }
             stos=stos->next;
         }
-        V.visited=0;
-        cykle.pop_back();
-        odwiedzone--;
+    V.visited=0;
+    cykle.pop_back();
+    odwiedzone--;
     }
 }
 int main()
@@ -261,13 +263,25 @@ int main()
         }
         generuj_nast(T,M);
         wyswietl_nast(T);
-        szukaj_euler(T,stos);
+        cout<<endl;
+
+        clock_t start;
 
         vector<int> cykle;
+        start = clock();
         szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle,1);
+        cout<<"czas dla jednego cyklu hamiltona: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+        cykle.clear();
 
         odwiedzone=0;
+        start = clock();
         szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle);
+        cout<<"czas dla wszystkich cykli hamiltona: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+
+        start = clock();
+        szukaj_euler(T,stos);
+        cout<<"czas dla eulera: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+
     }
     delete []T;
     for(int i=0; i<n; i++)
