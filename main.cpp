@@ -7,14 +7,13 @@
 #include <windows.h>
 using namespace std;
 int n=20;
-double d=0.6;
+double d=0.4;
 
 struct lista
 {
     int nazwa;
     lista* next;
     lista *prev;
-    lista *mirror;
 };
 struct wierzcholek
 {
@@ -36,7 +35,7 @@ bool eulerowski(int **M)
 }
 
 //generuje macierz
-void generuj_macierz(int **M, double gestosc,int &krawedzie, int &spojny)
+void generuj_macierz(int **M, double gestosc,int &krawedzie)
 {
     gestosc=gestosc*n*(n-1)/2;
     int a,b,c;
@@ -48,8 +47,43 @@ void generuj_macierz(int **M, double gestosc,int &krawedzie, int &spojny)
         M[b][a]=0;
         krawedzie--;
     }
-    if(!eulerowski(M)) spojny=0;
-    else spojny=1;
+    for(int i=0; i<n; i++)
+    {
+        int stp=0;
+        for(int x=0;x<n;x++) if(M[i][x]) stp++;
+        if(stp%2!=0)
+        {
+            int j=rand()%(n-i-1)+i+1;
+                if(M[i][j])
+                {
+                    M[i][j]=0;
+                    M[j][i]=0;
+                    krawedzie--;
+                }
+                else
+                {
+                    M[i][j]=1;
+                    M[j][i]=1;
+                    krawedzie++;
+
+                }
+        }
+    }
+    if(!eulerowski(M))
+    {
+        for(int i=0;i<n;i++)
+            {
+                for(int j=0;j<n;j++)
+                    {
+                        if(M[i][j]!=1&&i!=j)
+                        {
+                            M[i][j]=1;
+                            krawedzie++;
+                        }
+                    }
+            }
+        generuj_macierz(M,d,krawedzie);
+    }
 }
 
 //generuje liste nastepnikow na podstawie macierzy
@@ -63,7 +97,6 @@ void generuj_nast(wierzcholek T[], int **M)
             {
                 lista *nowy= new lista;
                 nowy->nazwa=m;
-                nowy->mirror=NULL;
                 nowy->prev=NULL;
                 if(T[i].sasiad==NULL)
                 {
@@ -76,18 +109,6 @@ void generuj_nast(wierzcholek T[], int **M)
                 }
                 T[i].sasiad=nowy;
             }
-        }
-    }
-    for(int i=0; i<n; i++)
-    {
-        lista *current, *szukaj;
-        current=T[i].sasiad;
-        while(current!=NULL)
-        {
-            szukaj=T[current->nazwa].sasiad;
-            while(szukaj!=NULL&&szukaj->nazwa!=i) szukaj=szukaj->next;
-            if(szukaj!=NULL&&szukaj->nazwa==i) current->mirror=szukaj;
-            current=current->next;
         }
     }
 }
@@ -108,7 +129,6 @@ void generuj_nast(wierzcholek T[], int **M)
 void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
 {
     lista *pom2=T[temp->nazwa].sasiad;
-    //lista *pom2=stos.sasiad->mirror;
     if(pom2!=NULL)
     {
         while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
@@ -219,7 +239,6 @@ int main()
     {
         T[i].nazwa=i;
         T[i].sasiad=NULL;
-        T[i].visited=0;
     }
     int **M=new int *[n];
     for(int i=0; i<n; i++)
@@ -236,31 +255,7 @@ int main()
     }
     if(d>(double)2/n)
     {
-        while(spojny!=1)
-            {
-                for(int i=0;i<n;i++)
-                {
-                    for(int j=0;j<n;j++)
-                        {
-                            if(M[i][j]!=1&&i!=j)
-                            {
-                                M[i][j]=1;
-                                krawedzie++;
-                            }
-                        }
-                }
-                generuj_macierz(M,d,krawedzie,spojny);
-            }
-    }
-    if(spojny==0) cout<<"dla takiej gestosci i losci wierzcholkow nie istnieje graf eulerowski!"<<endl;
-    else
-    {
-        for(int i=0; i<n; i++)
-        {
-            for(int j=0; j<n; j++)
-                cout<<M[i][j]<<" ";
-            cout<<endl;
-        }
+        generuj_macierz(M,d,krawedzie);
         generuj_nast(T,M);
         wyswietl_nast(T);
         cout<<endl;
@@ -270,17 +265,17 @@ int main()
         vector<int> cykle;
         start = clock();
         szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle,1);
-        cout<<"czas dla jednego cyklu hamiltona: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+        cout<<"czas dla jednego cyklu hamiltona: "<<(long double)(clock()-start)/CLOCKS_PER_SEC<<endl;
         cykle.clear();
 
         odwiedzone=0;
         start = clock();
         szukaj_hamilton(T,T[0],T[0].sasiad,odwiedzone,cykle);
-        cout<<"czas dla wszystkich cykli hamiltona: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+        cout<<"czas dla wszystkich cykli hamiltona: "<<(long double)(clock()-start)/CLOCKS_PER_SEC<<endl;
 
         start = clock();
         szukaj_euler(T,stos);
-        cout<<"czas dla eulera: "<<double(clock()-start)/CLOCKS_PER_SEC<<endl;
+        cout<<"czas dla eulera: "<<(long double)(clock()-start)/CLOCKS_PER_SEC<<endl;
 
     }
     delete []T;
