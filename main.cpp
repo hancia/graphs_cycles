@@ -6,8 +6,8 @@
 #include <vector>
 #include <windows.h>
 using namespace std;
-int n=20;
-double d=0.4;
+int n=24;
+double d=0.2;
 
 struct lista
 {
@@ -113,6 +113,37 @@ void generuj_nast(wierzcholek T[], int **M)
     }
 }
 
+void wprowadz_nast(wierzcholek T[])
+{
+    ifstream plik;
+    plik.open("graf.txt");
+    for(int i=0; i<n; i++)
+    {
+        int a;
+        plik>>a;
+        for(int j=0;j<a;j++)
+        {
+            int m;
+            plik>>m;
+            m=m-1;
+                lista *nowy= new lista;
+                nowy->nazwa=m;
+                nowy->prev=NULL;
+                if(T[i].sasiad==NULL)
+                {
+                    nowy->next=NULL;
+                }
+                else
+                {
+                    nowy->next=T[i].sasiad;
+                    T[i].sasiad->prev=nowy;
+                }
+                T[i].sasiad=nowy;
+        }
+    }
+    plik.close();
+}
+
  void wyswietl_nast(wierzcholek T[])
  {
      for(int i=0; i<n; i++)
@@ -126,12 +157,12 @@ void generuj_nast(wierzcholek T[], int **M)
          }
      }
 }
-void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
+void usun(wierzcholek T[],lista *temp, wierzcholek &obecny)
 {
     lista *pom2=T[temp->nazwa].sasiad;
     if(pom2!=NULL)
     {
-        while(pom2->nazwa!=stos.nazwa) pom2=pom2->next;
+        while(pom2->nazwa!=obecny.nazwa) pom2=pom2->next;
         if(pom2->prev!=NULL&&pom2->next!=NULL)
         {
             pom2->prev->next=pom2->next;
@@ -156,27 +187,26 @@ void usun(wierzcholek T[],lista *temp, wierzcholek &stos)
                 }
             }
         }
-        //stos.sasiad->mirror=NULL;
     }
 }
-void dfs(wierzcholek T[], wierzcholek &stos, lista *temp)
+void dfs(wierzcholek T[], wierzcholek &obecny, lista *temp)
 {
-    while(temp!=NULL)
+    while(obecny.sasiad!=NULL)
     {
-        usun(T,temp,stos);
+        usun(T,temp,obecny);
         lista *pom=temp;
         temp=temp->next;
-        if(temp==NULL) stos.sasiad=NULL;
+        if(temp==NULL) obecny.sasiad=NULL;
         else
         {
             temp->prev=NULL;
-            stos.sasiad=temp;
+            obecny.sasiad=temp;
         }
         dfs(T,T[pom->nazwa],T[pom->nazwa].sasiad);
     }
-   //cout<<stos.nazwa+1<<"->";
+    //cout<<obecny.nazwa+1<<"->";
 }
-void szukaj_euler(wierzcholek T[], lista *stos)
+void szukaj_euler(wierzcholek T[], lista *obecny)
 {
     wierzcholek *pom = new wierzcholek[n];
     memcpy(pom,T,n * sizeof(wierzcholek));
@@ -191,7 +221,7 @@ void print_vector (vector <int> tab)
     cout<<endl;
 }
 int flaga_znalezienia = 0;
-void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzone,vector<int>&cykle,int znajdz_jeden=0)
+void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *obecny, int &odwiedzone,vector<int>&cykle,int znajdz_jeden=0)
 {
     if(!(flaga_znalezienia && znajdz_jeden))
     {
@@ -201,14 +231,14 @@ void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzon
         if(odwiedzone==n)
         {
             int flaga=0;
-            while(stos!=NULL)
+            while(obecny!=NULL)
             {
-                if(stos->nazwa==0)
+                if(obecny->nazwa==0)
                 {
                     flaga=1;
                     break;
                 }
-                else stos=stos->next;
+                else obecny=obecny->next;
             }
             if(flaga==1)
             {
@@ -216,13 +246,13 @@ void szukaj_hamilton(wierzcholek T[],wierzcholek &V, lista *stos, int &odwiedzon
                 flaga_znalezienia=1;
             }
         }
-        while(stos!=NULL)
+        while(obecny!=NULL)
         {
-            if(!T[stos->nazwa].visited)
+            if(!T[obecny->nazwa].visited)
             {
-                szukaj_hamilton(T,T[stos->nazwa],T[stos->nazwa].sasiad,odwiedzone,cykle,znajdz_jeden);
+                szukaj_hamilton(T,T[obecny->nazwa],T[obecny->nazwa].sasiad,odwiedzone,cykle,znajdz_jeden);
             }
-            stos=stos->next;
+            obecny=obecny->next;
         }
     V.visited=0;
     cykle.pop_back();
@@ -233,7 +263,7 @@ int main()
 {
     srand(time(NULL));
     int krawedzie=0,spojny=0,odwiedzone=0, krok=0;
-    lista *stos=NULL;
+    lista *vert=NULL;
     wierzcholek *T = new wierzcholek[n];
     for(int i=0; i<n; i++)
     {
@@ -257,7 +287,8 @@ int main()
     {
         generuj_macierz(M,d,krawedzie);
         generuj_nast(T,M);
-        wyswietl_nast(T);
+        //wprowadz_nast(T);
+        //wyswietl_nast(T);
         cout<<endl;
 
         clock_t start;
@@ -274,7 +305,7 @@ int main()
         cout<<"czas dla wszystkich cykli hamiltona: "<<(long double)(clock()-start)/CLOCKS_PER_SEC<<endl;
 
         start = clock();
-        szukaj_euler(T,stos);
+        szukaj_euler(T,vert);
         cout<<"czas dla eulera: "<<(long double)(clock()-start)/CLOCKS_PER_SEC<<endl;
 
     }
